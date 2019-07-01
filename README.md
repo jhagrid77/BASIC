@@ -1,2 +1,2 @@
 # BASIC
-BASH script which attempts to harden Debian based systems
+This is an interactive script which scans different parts of a Debian system and allows you to harden it.
