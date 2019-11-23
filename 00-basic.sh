@@ -21,88 +21,88 @@
 #     Script     #
 ##################
 
-BRED="\033[1;31m"
-BLUE="\033[0;34m"
-GREEN="\033[0;32m"
-ENDCOLOR="\033[0m"
+bred="\033[1;31m"
+blue="\033[0;34m"
+green="\033[0;32m"
+endcolor="\033[0m"
 
 # Hardening Variables
-MEMORY_SHUFFLING=$(cat /proc/sys/kernel/randomize_va_space)
-MEMORY_SHUFFLING_FILE=$(cat /etc/sysctl.conf | grep '^kernel.randomize_va_space')
-SUID_DUMPABLE=$(cat /etc/sysctl.conf | grep '^fs.suid_dumpable')
-KERNEL_EXEC=$(cat /etc/sysctl.conf | grep '^kernel.exec-shield')
-IP_FORWARDING=$(cat /etc/sysctl.conf | grep '^net.ipv4.ip_forward')
-PACKET_REDIRECTS_1=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.all.send_redirects')
-PACKET_REDIRECTS_2=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.default.send_redirects')
-ICMP_REDIRECT_1=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.all.accept_redirects')
-ICMP_REDIRECT_2=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.default.accept_redirects')
-MESSAGE_PROTECTION=$(cat /etc/sysctl.conf | grep '^net.ipv4.icmp_ignore_bogus_error_responses')
+memory_shuffling=$(cat /proc/sys/kernel/randomize_va_space)
+memory_shuffling_file=$(cat /etc/sysctl.conf | grep '^kernel.randomize_va_space')
+suid_dumpable=$(cat /etc/sysctl.conf | grep '^fs.suid_dumpable')
+kernel_exec=$(cat /etc/sysctl.conf | grep '^kernel.exec-shield')
+ip_forwarding=$(cat /etc/sysctl.conf | grep '^net.ipv4.ip_forward')
+packet_redirects_1=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.all.send_redirects')
+packet_redirects_2=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.default.send_redirects')
+icmp_redirect_1=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.all.accept_redirects')
+icmp_redirect_2=$(cat /etc/sysctl.conf | grep '^net.ipv4.conf.default.accept_redirects')
+message_protection=$(cat /etc/sysctl.conf | grep '^net.ipv4.icmp_ignore_bogus_error_responses')
 #BOOT_DIRECTORY=$(cat /etc/fstab | grep '^LABEL=/boot')
 
 # Other Variables
-UFW_STATUS=$(sudo ufw status | grep 'Status:')
-GUEST_ACCOUNT=$(cat /etc/lightdm/lightdm.conf 2>/dev/null | grep "allow-guest")
+ufw_status=$(sudo ufw status | grep 'Status:')
+guest_account=$(cat /etc/lightdm/lightdm.conf 2>/dev/null | grep "allow-guest")
 
 # Service Variables
-SSH=$(dpkg -l 2>/dev/null | grep "openssh-server" | tail -n 1 | awk '{print $1}')
-APACHE=$(dpkg -l 2>/dev/null | grep "apache2" | tail -n 1 | awk '{print $1}')
-VSFTP=$(dpkg -l 2>/dev/null | grep "vsftpd" | tail -n 1 | awk '{print $1}')
-PUREFTPD=$(dpkg -l 2>/dev/null | grep "pure-ftpd" | tail -n 1 | awk '{print $1}')
+ssh=$(dpkg -l 2>/dev/null | grep "openssh-server" | tail -n 1 | awk '{print $1}')
+apache=$(dpkg -l 2>/dev/null | grep "apache2" | tail -n 1 | awk '{print $1}')
+vsftp=$(dpkg -l 2>/dev/null | grep "vsftpd" | tail -n 1 | awk '{print $1}')
+pureftpd=$(dpkg -l 2>/dev/null | grep "pure-ftpd" | tail -n 1 | awk '{print $1}')
 
-echo -e $BRED"Root permissions are required to run this script."$ENDCOLOR
+echo -e $bred"Root permissions are required to run this script."$endcolor
 sudo echo ""
 mkdir $PWD/backups
 clear
 
-echo -e $BLUE"Do you want to enable memory shuffling?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to enable memory shuffling?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
-  if [ "$MEMORY_SHUFFLING" != "2" ]
+  if [[ "$memory_shuffling" != "2" ]]
   then
     sudo su -c "echo '2' > /proc/sys/kernel/randomize_va_space"
   fi
-  if [ "$MEMORY_SHUFFLING_FILE" != "kernel.randomize_va_space" ]
+  if [[ "$memory_shuffling_file" != "kernel.randomize_va_space" ]]
   then
     echo 'kernel.randomize_va_space = 2' | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$MEMORY_SHUFFLING_FILE" != "kernel.randomize_va_space = 2" ]
+  elif [[ "$memory_shuffling_file" != "kernel.randomize_va_space = 2" ]]
   then
     sudo sed -i 's/^kernel.randomize_va_space = ?/kernel.randomize_va_space = 2/g' /etc/sysctl.conf
   fi
 fi
 
-echo -e $BLUE"Do you want to enable firewall?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to enable firewall?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
-  if [ "$UFW_STATUS" != "Status: active" ]
+  if [[ "$ufw_status" != "Status: active" ]]
   then
     sudo ufw enable
   fi
   sudo ufw logging on
   sudo ufw logging high
-  OPEN_FW=$(sudo ufw status | grep -v "Status\|To\|---" | nl | tail -n1)
-  if [ "$OPEN_FW" -ge '1' ]
+  open_fw=$(sudo ufw status | grep -v "Status\|To\|---" | nl | tail -n1)
+  if [[ "$open_fw" -ge '1' ]]
   then
-    echo -e $GREEN"Outputting open firewall ports to $PWD/open-fw.txt"$ENDCOLOR
-    sudo ufw status > ./open-fw.txt
+    echo -e $green"Outputting open firewall ports to $PWD/open-fw.txt"$endcolor
+    sudo ufw status | tee ./open-fw.txt
   fi
 fi
 
-echo -e $BLUE"Do you want to disable guest?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to disable guest?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
-  if [ "$GUEST_ACCOUNT" != "allow-guest=false" ]
+  if [[ "$guest_account" != "allow-guest=false" ]]
   then
     cp /etc/lightdm/lightdm.conf $PWD/backups/lightdm.conf.bak 2>/dev/null
     sudo sed -i 's/allow-guest=true/allow-guest=false/g' /etc/lightdm/lightdm.conf 2>/dev/null
@@ -110,12 +110,12 @@ then
   fi
 fi
 
-echo -e $BLUE"Do you want to set password policies?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to set password policies?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
   cp /etc/pam.d/common-password $PWD/backups/common-password.bak
   cp /etc/login.defs $PWD/backups/login.defs.bak
@@ -127,129 +127,122 @@ then
   sudo sed -i 's/^password [success=2 default=ignore] pam_unix.so obscure sha512/password [success=2 default=ignore] pam_unix.so obscure sha512 minlen=10/g' /etc/pam.d/common-password
 fi
 
-echo -e $BLUE"Do you want to list and save users?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to list and save users?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
   eval getent passwd {"$(awk '/^UID_MIN/ {print $2}' /etc/login.defs)".."$(awk '/^UID_MAX/ {print $2}' /etc/login.defs)"} > users.txt
 fi
 
-echo -e $BLUE"Do you want to enable misc hardening?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to enable misc hardening?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
   echo 'hard nproc $(ps aux -L | cut --delimiter=" " --fields=1 | sort | uniq --count | sort --numeric-sort | tail --lines=1)' | sudo tee -a /etc/security/limits.conf > /dev/null
   echo 'hard core 0' | sudo tee -a /etc/security/limits.conf > /dev/null
-  # if [ "$BOOT_DIRECTORY" != "^LABEL=/boot" ]
-  # then
-  #   echo "LABEL=/boot /boot ext2 defaults,ro 1 2" | sudo tee -a /etc/fstab > /dev/null
-  # elif [ "$BOOT_DIRECTORY" != "^LABEL=/boot.*/boot.*ext2.*defaults,ro.*1.*2" ]
-  # then
-  #   sudo sed -i 's/^LABEL=/boot.*/LABEL=/boot /boot ext2 defaults,ro 1 2/g' /etc/fstab
-  # fi
-  if [ "$SUID_DUMPABLE" != "^fs.suid_dumpable" ]
+  if [[ "$suid_dumpable" != "^fs.suid_dumpable" ]]
   then
     echo "fs.suid_dumpable = 0" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$SUID_DUMPABLE" != "^fs.suid_dumpable = 0" ]
+  elif [[ "$suid_dumpable" != "^fs.suid_dumpable = 0" ]]
   then
     sudo sed -i 's/^fs.suid_dumpable = ?/fs.suid_dumpable = 0/g' /etc/sysctl.conf
   fi
-  if [ "$KERNEL_EXEC" != "^kernel.exec-shield" ]
+  if [[ "$kernel_exec" != "^kernel.exec-shield" ]]
   then
     echo "kernel.exec-shield = 1" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$KERNEL_EXEC" != "^kernel.exec-shield = 1" ]
+  elif [[ "$kernel_exec" != "^kernel.exec-shield = 1" ]]
   then
     sudo sed -i 's/^kernel.exec-shield = ?/kernel.exec-shield = 1/g'
   fi
-  if [ "$IP_FORWARDING" != "^net.ipv4.ip_forward" ]
+  if [[ "$ip_forwarding" != "^net.ipv4.ip_forward" ]]
   then
     echo "net.ipv4.ip_forward = 0" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$IP_FORWARDING" != "^net.ipv4.ip_forward = 0" ]
+  elif [[ "$ip_forwarding" != "^net.ipv4.ip_forward = 0" ]]
   then
     sudo sed -i 's/^net.ipv4.ip_forward = ?/net.ipv4.ip_forward = 0/g' /etc/sysctl.conf
   fi
-  if [ "$PACKET_REDIRECTS_1" != "^net.ipv4.conf.all.send_redirects" ]
+  if [[ "$packet_redirects_1" != "^net.ipv4.conf.all.send_redirects" ]]
   then
     echo "net.ipv4.conf.all.send_redirects = 0" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$PACKET_REDIRECTS_1" != "^net.ipv4.conf.all.send_redirects = 0" ]
+  elif [[ "$packet_redirects_1" != "^net.ipv4.conf.all.send_redirects = 0" ]]
   then
     sudo sed -i 's/^net.ipv4.conf.all.send_redirects = ?/net.ipv4.conf.all.send_redirects = 0/g' /etc/sysctl.conf
   fi
-  if [ "$PACKET_REDIRECTS_2" != "^net.ipv4.conf.default.send_redirects" ]
+  if [[ "$packet_redirects_2" != "^net.ipv4.conf.default.send_redirects" ]]
   then
     echo "net.ipv4.conf.default.send_redirects = 0" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$PACKET_REDIRECTS_2" != "^net.ipv4.conf.default.send_redirects = 0" ]
+  elif [[ "$packet_redirects_2" != "^net.ipv4.conf.default.send_redirects = 0" ]]
   then
     sudo sed -i 's/^net.ipv4.conf.default.send_redirects = ?/net.ipv4.conf.default.send_redirects = 0/g' /etc/sysctl.conf
   fi
-  if [ "$ICMP_REDIRECT_1" != "^net.ipv4.conf.all.accept_redirects" ]
+  if [[ "$icmp_redirect_1" != "^net.ipv4.conf.all.accept_redirects" ]]
   then
     echo "net.ipv4.conf.all.accept_redirects = 0" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$ICMP_REDIRECT_1" != "^net.ipv4.conf.all.accept_redirects = 0" ]
+  elif [[ "$icmp_redirect_1" != "^net.ipv4.conf.all.accept_redirects = 0" ]]
   then
     sudo sed -i 's/^net.ipv4.conf.all.accept_redirects = ?/net.ipv4.conf.all.accept_redirects = 0/g' /etc/sysctl.conf
   fi
-  if [ "$ICMP_REDIRECT_2" != "^net.ipv4.conf.default.accept_redirects" ]
+  if [[ "$icmp_redirect_2" != "^net.ipv4.conf.default.accept_redirects" ]]
   then
     echo "net.ipv4.conf.default.accept_redirects = 0" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$ICMP_REDIRECT_2" != "^net.ipv4.conf.default.accept_redirects = 0" ]
+  elif [[ "$icmp_redirect_2" != "^net.ipv4.conf.default.accept_redirects = 0" ]]
   then
     sudo sed -i 's/^net.ipv4.conf.default.accept_redirects = ?/net.ipv4.conf.default.accept_redirects = 0/g' /etc/sysctl.conf
   fi
-  if [ "$MESSAGE_PROTECTION" != "^net.ipv4.icmp_ignore_bogus_error_responses" ]
+  if [[ "$message_protection" != "^net.ipv4.icmp_ignore_bogus_error_responses" ]]
   then
     echo "net.ipv4.icmp_ignore_bogus_error_responses = 0" | sudo tee -a /etc/sysctl.conf > /dev/null
-  elif [ "$ICMP_REDIRECT_2" != "^net.ipv4.icmp_ignore_bogus_error_responses = 0" ]
+  elif [[ "$icmp_redirect_2" != "^net.ipv4.icmp_ignore_bogus_error_responses = 0" ]]
   then
     sudo sed -i 's/^net.ipv4.icmp_ignore_bogus_error_responses = ?/net.ipv4.icmp_ignore_bogus_error_responses = 0/g' /etc/sysctl.conf
   fi
 fi
 
-echo -e $BLUE"Do you want to remove hacking tools and games?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to remove hacking tools and games?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
   cat games.txt | xargs sudo apt-get purge -y
   cat hacking-tools.txt | xargs sudo apt-get purge -y
 fi
 
-echo -e $BLUE"Do you want to list users with blank passwords?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to list users with blank passwords?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
-  sudo awk -F: '$2 == "" {print $1, "has no password!" }' /etc/shadow > ./blank-passwords.txt
+  sudo awk -F: '$2 == "" {print $1, "has no password!" }' /etc/shadow | tee ./blank-passwords.txt
 fi
 
-echo -e $BLUE"Do you want to install and run ClamAV?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to install and run ClamAV?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
   sudo apt-get install -y clamav
   sudo freshclam
   sudo clamscan --max-filesize=3999M --max-scansize=3999M --exclude-dir=/sys/* -i -r /
 fi
 
-echo -e $BLUE"Do you want to list all cron tabs?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Do you want to list all cron tabs?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
   echo -e "/etc/cron.d is: $(ls /etc/cron.d)\n" > $PWD/crons.txt
   echo -e "Daily crons: $(ls /etc/cron.daily)\n" > $PWD/crons.txt
@@ -259,14 +252,14 @@ then
 fi
 
 # Securing Services
-echo -e $BLUE"Is SSH needed?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Is ssh needed?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
-  if [ "$SSH" = 'ii' ]
+  if [[ "$ssh" = 'ii' ]]
   then
     cp /etc/ssh/sshd_config $PWD/backups/sshd_config.bak
     tail -n -10 /etc/ssh/sshd_config > sshd_config
@@ -286,26 +279,26 @@ then
     sudo systemctl restart sshd 2>/dev/null
     sudo systemctl restart ssh 2>/dev/null
   fi
-elif [ "$QUESTION" = 'No' ]
+elif [[ "$question" = 'No' ]]
 then
-  if [ "$SSH" = 'ii' ]
+  if [[ "$ssh" = 'ii' ]]
   then
     sudo systemctl disable sshd
     sudo systemctl stop sshd
     sudo apt-get purge -y openssh-server
     PORT=$(cat /etc/ssh/sshd_config | grep "Port " | awk '{print $2}')
-    sudo ufw status | grep -v "Status\|To\|---" | nl | grep " SSH\| OpenSSH\| $PORT/tcp\| $PORT/udp" | awk '{print $1}' | sort -nr | sudo xargs ufw --force delete $0
+    sudo ufw status | grep -v "Status\|To\|---" | nl | grep " ssh\| Openssh\| $PORT/tcp\| $PORT/udp" | awk '{print $1}' | sort -nr | sudo xargs ufw --force delete $0
   fi
 fi
 
-echo -e $BLUE"Is Apache needed?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Is Apache needed?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
-  if [ "$APACHE" = 'ii' ]
+  if [[ "$apache" = 'ii' ]]
   then
     sudo sed -i 's/^mod_imap/#mod_imap/g' /etc/apache2/apache2.conf
     sudo sed -i 's/^mod_include/#mod_include/g' /etc/apache2/apache2.conf
@@ -314,42 +307,43 @@ then
     sudo sed -i 's/^mod_autoindex/#mod_autoindex/g' /etc/apache2/apache2.conf
     sudo systemctl restart apache2
   fi
-elif [ "$QUESTION" = 'No' ]
+elif [[ "$question" = 'No' ]]
 then
-  if [ "$APACHE" = 'ii' ]
+  if [[ "$apache" = 'ii' ]]
   then
     sudo systemctl stop apache2
     sudo apt-get purge -y apache2*
   fi
 fi
 
-echo -e $BLUE"Is FTP needed?"$ENDCOLOR
-select QUESTION in Yes No;
+echo -e $blue"Is FTP needed?"$endcolor
+select question in Yes No;
 do
   break;
 done
-if [ "$QUESTION" = 'Yes' ]
+if [[ "$question" = 'Yes' ]]
 then
-  if [ "$VSFTP" = 'ii' ]
+  if [[ "$vsftp" = 'ii' ]]
   then
     sudo sed -i 's/.*anonymous_enable=YES/anonymous_enable=NO/g' /etc/vsftpd/vsftpd.conf
     sudo sed -i 's/.*local_enable=NO/local_enable=YES/g' /etc/vsftpd/vsftpd.conf
+    sudo sed -i 's/.*anon_upload_enable/anon_upload_enable'
     sudo systemctl restart vsftp
     sudo chkconfig vsftpd on
   fi
-  if [ "$PUREFTPD" = 'ii' ]
+  if [[ "$pureftpd" = 'ii' ]]
   then
     echo 2 | sudo tee /etc/pure-ftpd/conf/TLS
   fi
-elif [ "$QUESTION" = 'No' ]
+elif [[ "$question" = 'No' ]]
 then
-  if [ "$VSFTP" = 'ii' ]
+  if [[ "$vsftp" = 'ii' ]]
   then
     sudo systemctl disable vsftp
     sudo systemctl stop vsftp
     sudo apt-get purge -y vsftp
   fi
-  if [ "$PUREFTPD" = 'ii' ]
+  if [[ "$pureftpd" = 'ii' ]]
   then
     sudo systemctl disable pure-ftpd
     sudo systemctl stop pure-ftpd
@@ -358,7 +352,7 @@ then
 fi
 
 # End of script
-echo -e $GREEN"Setting correct permissions for files."$ENDCOLOR
+echo -e $green"Setting correct permissions for files."$endcolor
 sudo chmod -R 444 /var/log
 sudo chmod -R 444 /etc/ssh
 sudo chown root:root /etc/ssh/sshd_config
@@ -375,21 +369,20 @@ sudo chown root:root /etc/shadow
 sudo chmod 600 /etc/gshadow
 sudo chown root:root /etc/gshadow
 
-unset MEMORY_SHUFFLING
-unset MEMORY_SHUFFLING_FILE
-unset SUID_DUMPABLE
-unset KERNEL_EXEC
-unset IP_FORWARDING
-unset PACKET_REDIRECTS_1
-unset PACKET_REDIRECTS_2
-unset ICMP_REDIRECT_1
-unset ICMP_REDIRECT_2
-unset MESSAGE_PROTECTION
-unset BOOT_DIRECTORY
-unset UFW_STATUS
-unset GUEST_ACCOUNT
-unset SSH
-unset OPEN_FW
-unset VSFTP
-unset PUREFTPD
-unset QUESTION
+unset memory_shuffling
+unset memory_shuffling_file
+unset suid_dumpable
+unset kernel_exec
+unset ip_forwarding
+unset packet_redirects_1
+unset packet_redirects_2
+unset icmp_redirect_1
+unset icmp_redirect_2
+unset message_protection
+unset ufw_status
+unset guest_account
+unset ssh
+unset open_fw
+unset vsftp
+unset pureftpd
+unset question
